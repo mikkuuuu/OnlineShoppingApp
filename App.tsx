@@ -7,7 +7,8 @@ import {
   FlatList,
   Modal,
   ScrollView,
-  StyleSheet
+  StyleSheet,
+  TextInput
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,6 +36,7 @@ const ShoppingStore: React.FC = () => {
   const [showCart, setShowCart] = useState(false)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   const categoryArray = ["groceries", "lifestyle", "cloths", "automotive", "gadgets", "furniture", "toys"]
 
@@ -124,6 +126,25 @@ const ShoppingStore: React.FC = () => {
     setFilterItems(sortedItems);
   };
 
+  const searchFilteredItems = (keyword: string) => {
+    if (keyword === '') onPressClearFilters()
+    setSearchKeyword(keyword);
+    const filteredItems = items.filter((item) =>
+      item.productName.toLowerCase().includes(keyword.toLowerCase())
+    );
+    setFilterItems(filteredItems);
+  };
+
+  const searchItems = (keyword: string) => {
+    if (keyword === '') onPressClearFilters()
+    setSearchKeyword(keyword);
+    const filteredItems = items.filter((item) =>
+      item.productName.toLowerCase().includes(keyword.toLowerCase())
+    );
+    setItems(filteredItems);
+  };
+
+
   /** <-- End of Filter Functions --> */
 
   /** <-- Start of OnPress Functions --> */
@@ -144,6 +165,7 @@ const ShoppingStore: React.FC = () => {
 
   const onPressClearFilters = () => {
     filterItemsByCategory('')
+    setSearchKeyword('')
     setItems(customData);
   };
 
@@ -254,6 +276,14 @@ const ShoppingStore: React.FC = () => {
                   }
                 </ScrollView>
               </View>
+              {
+                < TextInput
+                  style={styles.input}
+                  placeholder="Search by Product Name"
+                  onChangeText={selectedCategory === '' ? searchItems : searchFilteredItems}
+                  value={searchKeyword}
+                />
+              }
               <TouchableOpacity style={{ margin: 5, marginLeft: 15 }} onPress={selectedCategory === '' ? sortItemsByPrice : sortFilterItemsbyPrice}>
                 <Text style={{ color: 'gray' }}>Sort by Price {sortOrder === 'asc' ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -331,4 +361,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  input: {
+    borderColor: 'gray',
+    borderBottomWidth: 1,
+    paddingHorizontal: 15,
+    marginTop: -10
+  }
 });
