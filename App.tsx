@@ -269,6 +269,7 @@ const ShoppingStore: React.FC = () => {
             />
             :
             <FlatList
+              inverted
               style={{ marginTop: 10 }}
               data={cartItems}
               renderItem={renderCartItem}
