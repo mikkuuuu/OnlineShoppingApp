@@ -6,19 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
-  Button,
   ScrollView,
   StyleSheet
 } from 'react-native';
 
-import Icon from 'react-native-ionicons'
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 const customData = require('./items.json');
-
-const obj = JSON.stringify(customData);
 
 interface Item {
   id: string;
@@ -39,35 +33,35 @@ const ShoppingStore: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [showCart, setShowCart] = useState(false)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
+  const categoryArray = ["groceries", "lifestyle", "cloths", "automotive", "gadgets", "furniture", "toys"]
+
+  //Loads items and cart items if there is any
   useEffect(() => {
-    // Load items from AsyncStorage or an API call
     loadItems();
     loadCartItems();
   }, []);
 
+  // Save cart items to AsyncStorage
   useEffect(() => {
-    // Save cart items to AsyncStorage whenever it changes
     saveCartItems();
   }, [cartItems]);
 
+  /** <-- Start of Product and Cart Functions --> */
+
   const loadItems = async () => {
-    // Simulated data retrieval from AsyncStorage or API
-    const storedItems = await AsyncStorage.getItem(obj);
-    const parsedItems = storedItems ? JSON.parse(storedItems) : [];
     setItems(customData);
   };
 
   const loadCartItems = async () => {
-    // Simulated data retrieval from AsyncStorage or API
     const storedCartItems = await AsyncStorage.getItem('cartItems');
     const parsedCartItems = storedCartItems ? JSON.parse(storedCartItems) : [];
     setCartItems(parsedCartItems);
   };
 
-
   const saveCartItems = async () => {
-    // Save cart items to AsyncStorage
     await AsyncStorage.setItem('cartItems', JSON.stringify(cartItems));
   };
 
@@ -94,20 +88,6 @@ const ShoppingStore: React.FC = () => {
     setCartItems(updatedCartItems.filter((cartItem) => cartItem.quantity > 0));
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
-
-  const onPressShowCart = () => {
-    setShowCart((current) => !current)
-  };
-
-  const checkout = () => {
-    if (cartItems.length === 0) return
-    setModalVisible(true);
-    clearCart();
-  };
-
   const getTotalItems = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
@@ -116,13 +96,9 @@ const ShoppingStore: React.FC = () => {
     return cartItems.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
   };
 
-  const [selectedCategory, setSelectedCategory] = useState('');
+  /** <-- End of Product and Cart Functions --> */
 
-  const categories = items.map((item) => item.category)
-
-  const uniqueCategories = Array.from(new Set(categories));
-
-  const categoryArray = ["groceries", "lifestyle", "cloths", "automotive", "gadgets", "furniture", "toys"]
+  /** <-- Start of Filter Functions --> */
 
   const filterItemsByCategory = (category: string) => {
     setSelectedCategory(category);
@@ -131,13 +107,6 @@ const ShoppingStore: React.FC = () => {
       : items;
     setFilterItems(filteredItems);
   };
-
-  const clearFilters = () => {
-    filterItemsByCategory('')
-    setItems(customData);
-  };
-
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const sortItemsByPrice = () => {
     const sortedItems = [...items].sort((a, b) =>
@@ -155,6 +124,30 @@ const ShoppingStore: React.FC = () => {
     setFilterItems(sortedItems);
   };
 
+  /** <-- End of Filter Functions --> */
+
+  /** <-- Start of OnPress Functions --> */
+
+  const onPressClearCart = () => {
+    setCartItems([]);
+  };
+
+  const onPressShowCart = () => {
+    setShowCart((current) => !current)
+  };
+
+  const onPressCheckOut = () => {
+    if (cartItems.length === 0) return
+    setModalVisible(true);
+    onPressClearCart();
+  };
+
+  const onPressClearFilters = () => {
+    filterItemsByCategory('')
+    setItems(customData);
+  };
+
+  /** <-- End of OnPress Functions --> */
 
   const renderItem = ({ item }: { item: Item }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5, marginHorizontal: 10, backgroundColor: '#b8d8d8', padding: 10, borderRadius: 10 }}>
@@ -230,15 +223,17 @@ const ShoppingStore: React.FC = () => {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }} >
           <TouchableOpacity disabled={!showCart} style={{ flexDirection: 'row' }} onPress={onPressShowCart}>
             {showCart ? <Text style={{ color: 'black', fontSize: 30, margin: 10, textAlign: 'center', alignSelf: 'center' }}>◀</Text> : null}
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginVertical: 10, marginHorizontal: showCart ? -5 : 10, alignSelf: 'center', textAlign: 'center' }}>{!showCart ? 'Available Items' : 'My Cart'}</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginVertical: 10, marginHorizontal: showCart ? -5 : 10, alignSelf: 'center', textAlign: 'center' }}>
+              {!showCart ? 'Available Items' : 'My Cart'}
+            </Text>
           </TouchableOpacity>
           {showCart ?
-            <TouchableOpacity onPress={clearCart}>
+            <TouchableOpacity onPress={onPressClearCart}>
               <Text style={{ color: 'black', fontSize: 30, margin: 10, textAlign: 'center', alignSelf: 'center' }}>🗑️</Text>
             </TouchableOpacity>
             : null}
           {showCart || selectedCategory === '' ? null :
-            <TouchableOpacity onPress={clearFilters}>
+            <TouchableOpacity onPress={onPressClearFilters}>
               <Text style={{ color: 'gray', fontSize: 20, margin: 10, textAlign: 'center', alignSelf: 'center' }}>❌</Text>
             </TouchableOpacity>}
         </View>
@@ -250,6 +245,7 @@ const ShoppingStore: React.FC = () => {
                   {
                     categoryArray.map((item) => {
                       return <TouchableOpacity
+                        key={item}
                         style={{ padding: 10, marginHorizontal: 10, marginVertical: 5 }}
                         onPress={() => filterItemsByCategory(item)}>
                         <Text style={{ color: selectedCategory === item ? '#FE5F55' : 'gray', fontSize: 16 }}>{item.slice(0, 1).toUpperCase() + item.slice(1, item.length)}</Text>
@@ -290,7 +286,7 @@ const ShoppingStore: React.FC = () => {
       }
 
       {showCart ?
-        <TouchableOpacity style={{ backgroundColor: '#fe5f55', margin: 10, borderRadius: 8 }} onPress={checkout}>
+        <TouchableOpacity style={{ backgroundColor: '#fe5f55', margin: 10, borderRadius: 8 }} onPress={onPressCheckOut}>
           <Text style={{ color: 'black', fontSize: 20, margin: 10, textAlign: 'center', alignSelf: 'center' }}>Checkout</Text>
         </TouchableOpacity>
         : null}
